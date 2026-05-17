@@ -1,122 +1,164 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>ESP32 MQTT HiveMQ</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Controle ESP32</title>
 
+  <!-- MQTT.js -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
   <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
     body{
-      background:#121212;
-      color:white;
-      font-family:Arial;
+      height:100vh;
       display:flex;
       justify-content:center;
       align-items:center;
-      height:100vh;
+      background:linear-gradient(135deg,#0f172a,#1e293b);
+      color:white;
     }
 
-    .box{
+    .container{
+      width:350px;
+      background:#111827;
+      padding:30px;
+      border-radius:20px;
       text-align:center;
+      box-shadow:0 0 25px rgba(0,0,0,0.5);
     }
 
-    button{
-      width:200px;
-      height:60px;
-      margin:10px;
-      border:none;
-      border-radius:10px;
-      font-size:20px;
-      cursor:pointer;
+    h1{
+      margin-bottom:20px;
+      font-size:28px;
+    }
+
+    .led{
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      background:#333;
+      margin:20px auto;
+      transition:0.3s;
+      box-shadow:0 0 20px #000 inset;
     }
 
     .on{
-      background:green;
+      background:#00ff00;
+      box-shadow:
+        0 0 20px #00ff00,
+        0 0 40px #00ff00,
+        0 0 60px #00ff00;
+    }
+
+    button{
+      width:120px;
+      padding:15px;
+      margin:10px;
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:18px;
+      font-weight:bold;
+      transition:0.3s;
+    }
+
+    .btn-on{
+      background:#16a34a;
       color:white;
     }
 
-    .off{
-      background:red;
+    .btn-on:hover{
+      background:#22c55e;
+      transform:scale(1.05);
+    }
+
+    .btn-off{
+      background:#dc2626;
       color:white;
+    }
+
+    .btn-off:hover{
+      background:#ef4444;
+      transform:scale(1.05);
+    }
+
+    .status{
+      margin-top:20px;
+      font-size:14px;
+      color:#cbd5e1;
     }
   </style>
 </head>
 <body>
 
-<div class="box">
+  <div class="container">
+    <h1>ESP32 LED</h1>
 
-  <h1>Controle ESP32</h1>
+    <div id="led" class="led"></div>
 
-  <button class="on" onclick="ligar()">
-    LIGAR
-  </button>
+    <button class="btn-on" onclick="ligarLed()">LIGAR</button>
+    <button class="btn-off" onclick="desligarLed()">DESLIGAR</button>
 
-  <button class="off" onclick="desligar()">
-    DESLIGAR
-  </button>
+    <div class="status" id="status">
+      Conectando ao MQTT...
+    </div>
+  </div>
 
-  <h3 id="status">
-    Conectando...
-  </h3>
+  <script>
 
-</div>
+    // Configuração MQTT
+    const broker = "wss://cea36965124c462a8fd17932fd985fd9.s1.eu.hivemq.cloud:8884/mqtt";
 
-<script>
+    const options = {
+      username: "Esp32Andre",
+      password: "Andre8080",
+      clean: true,
+      connectTimeout: 4000,
+      clientId: "WebClient_" + Math.random().toString(16).substr(2, 8),
+    };
 
-const options = {
+    // Conecta ao broker
+    const client = mqtt.connect(broker, options);
 
-  connectTimeout: 4000,
+    const status = document.getElementById("status");
+    const led = document.getElementById("led");
 
-  clientId:
-    'web_' +
-    Math.random().toString(16).substr(2, 8),
+    client.on("connect", () => {
+      console.log("Conectado ao MQTT");
+      status.innerHTML = "✅ Conectado ao MQTT";
+    });
 
-  clean: true
-};
+    client.on("error", (err) => {
+      console.log(err);
+      status.innerHTML = "❌ Erro na conexão MQTT";
+    });
 
-const client = mqtt.connect(
-  'wss://broker.hivemq.com:8884/mqtt',
-  options
-);
+    // Função ligar LED
+    function ligarLed() {
+      client.publish("esp32/led", "ON");
 
-client.on('connect', function () {
+      led.classList.add("on");
 
-  console.log('Conectado');
+      status.innerHTML = "💡 LED LIGADO";
+    }
 
-  document.getElementById("status")
-    .innerText = "MQTT CONECTADO";
-});
+    // Função desligar LED
+    function desligarLed() {
+      client.publish("esp32/led", "OFF");
 
-client.on('error', function (err) {
+      led.classList.remove("on");
 
-  console.log(err);
+      status.innerHTML = "⚫ LED DESLIGADO";
+    }
 
-  document.getElementById("status")
-    .innerText = "ERRO MQTT";
-});
-
-function ligar(){
-
-  client.publish(
-    'esp32/led',
-    'ON'
-  );
-
-  console.log("ON enviado");
-}
-
-function desligar(){
-
-  client.publish(
-    'esp32/led',
-    'OFF'
-  );
-
-  console.log("OFF enviado");
-}
-
-</script>
+  </script>
 
 </body>
 </html>
