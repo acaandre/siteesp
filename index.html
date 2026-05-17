@@ -3,9 +3,11 @@
 <head>
 
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Controle ESP32</title>
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>ESP32 MQTT</title>
 
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
@@ -120,6 +122,8 @@
       margin-top:20px;
 
       color:#cbd5e1;
+
+      font-size:18px;
     }
 
   </style>
@@ -133,12 +137,18 @@
 
     <div id="led" class="led"></div>
 
-    <button class="ligar" onclick="ligarLed()">
+    <button class="ligar"
+            onclick="ligarLed()">
+
       LIGAR
+
     </button>
 
-    <button class="desligar" onclick="desligarLed()">
+    <button class="desligar"
+            onclick="desligarLed()">
+
       DESLIGAR
+
     </button>
 
     <div id="status" class="status">
@@ -151,7 +161,9 @@
 
   <script>
 
-    // ================= MQTT =================
+    // =====================================================
+    // MQTT
+    // =====================================================
 
     const broker =
     "wss://cea36965124c462a8fd17932fd985fd9.s1.eu.hivemq.cloud:8884/mqtt";
@@ -163,7 +175,7 @@
       password: "Andre8080",
 
       clientId:
-      "Web_" +
+      "WEB_" +
       Math.random().toString(16).substr(2,8),
 
       clean:true,
@@ -171,15 +183,22 @@
       connectTimeout:4000
     };
 
-    // ================= CONECTA =================
+    const client =
+    mqtt.connect(broker, options);
 
-    const client = mqtt.connect(broker, options);
+    // =====================================================
+    // ELEMENTOS
+    // =====================================================
+
+    const led =
+    document.getElementById("led");
 
     const status =
     document.getElementById("status");
 
-    const led =
-    document.getElementById("led");
+    // =====================================================
+    // CONEXÃO
+    // =====================================================
 
     client.on("connect", () => {
 
@@ -187,17 +206,53 @@
 
       status.innerHTML =
       "✅ MQTT conectado";
+
+      // ESCUTA STATUS DO LED
+      client.subscribe(
+        "Esp32Andre/status"
+      );
     });
 
-    client.on("error", (erro) => {
+    // =====================================================
+    // RECEBER STATUS
+    // =====================================================
 
-      console.log(erro);
+    client.on("message",
+      (topic, message) => {
 
-      status.innerHTML =
-      "❌ Erro MQTT";
+      const msg =
+      message.toString();
+
+      console.log(topic, msg);
+
+      if (topic ===
+          "Esp32Andre/status") {
+
+        // ================= ON =================
+
+        if (msg === "ON") {
+
+          led.classList.add("on");
+
+          status.innerHTML =
+          "💡 LED LIGADO";
+        }
+
+        // ================= OFF =================
+
+        if (msg === "OFF") {
+
+          led.classList.remove("on");
+
+          status.innerHTML =
+          "⚫ LED DESLIGADO";
+        }
+      }
     });
 
-    // ================= LIGAR =================
+    // =====================================================
+    // LIGAR
+    // =====================================================
 
     function ligarLed(){
 
@@ -205,14 +260,11 @@
         "Esp32Andre/led",
         "ON"
       );
-
-      led.classList.add("on");
-
-      status.innerHTML =
-      "💡 LED LIGADO";
     }
 
-    // ================= DESLIGAR =================
+    // =====================================================
+    // DESLIGAR
+    // =====================================================
 
     function desligarLed(){
 
@@ -220,11 +272,6 @@
         "Esp32Andre/led",
         "OFF"
       );
-
-      led.classList.remove("on");
-
-      status.innerHTML =
-      "⚫ LED DESLIGADO";
     }
 
   </script>
